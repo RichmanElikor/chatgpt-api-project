@@ -1,20 +1,45 @@
-import openai
-import gradio
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+import gradio as gr
 
-openai.api_key = "####"
+# Load environment variables
+load_dotenv()
 
-messages = [{"role": "system", "content": "You are a financial experts that specializes in real estate investment and negotiation"}]
+# Initialize OpenAI client with API key from .env
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Initial system message
+messages = [
+    {"role": "system", "content": "You are a customer care assistant."}
+]
 
 def CustomChatGPT(user_input):
+    # Add user message
     messages.append({"role": "user", "content": user_input})
-    response = openai.ChatCompletion.create(
-        model = "gpt-3.5-turbo",
-        messages = messages
+
+    # Call OpenAI Chat API
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",   # you can also use "gpt-3.5-turbo"
+        messages=messages
     )
-    ChatGPT_reply = response["choices"][0]["message"]["content"]
-    messages.append({"role": "assistant", "content": ChatGPT_reply})
-    return ChatGPT_reply
 
-demo = gradio.Interface(fn=CustomChatGPT, inputs = "text", outputs = "text", title = "Real Estate Pro")
+    # Extract assistant reply
+    reply = response.choices[0].message.content
 
-demo.launch(share=True)
+    # Add assistant reply to conversation
+    messages.append({"role": "assistant", "content": reply})
+
+    return reply
+
+# Gradio UI
+demo = gr.Interface(
+    fn=CustomChatGPT,
+    inputs="text",
+    outputs="text",
+    title="Transactional AI chatbot. By A.O. Ozulem",
+)
+
+# Launch app
+if __name__ == "__main__":
+    demo.launch(share=True)  # share=True gives you a temporary public link
